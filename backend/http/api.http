@@ -9,8 +9,15 @@ Content-Type: application/json
 
 {
   "corporateName": "Concessionária Oeste LTDA",
-  "cnpj": "45.678.901/0001-23",
-  "address": { "zipCode": "58400000", "city": "Campina Grande", "state": "PB" }
+  "cnpj": "45.678.901/0001-75",
+  "address": {
+    "zipCode": "58400000",
+    "street": "Rua das Flores",
+    "number": "500",
+    "neighborhood": "Centro",
+    "city": "Campina Grande",
+    "state": "PB"
+  }
 }
 
 ### Invalid CNPJ -> 422
