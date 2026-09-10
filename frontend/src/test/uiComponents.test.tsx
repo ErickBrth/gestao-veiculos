@@ -5,83 +5,128 @@ import { Badge, FuelBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { DeleteConfirmModal } from '../components/ui/DeleteConfirmModal'
+import { FUEL_BADGE_FIXTURES } from './fixtures'
 
-describe('UI Components', () => {
-  describe('Badge & FuelBadge', () => {
-    it('renders Badge with default variant', () => {
-      render(<Badge>Default Tag</Badge>)
-      expect(screen.getByText('Default Tag')).toBeInTheDocument()
-    })
-
-    it('renders FuelBadge with correct labels and variants for fuels', () => {
-      const { rerender } = render(<FuelBadge fuelType="FLEX" />)
-      expect(screen.getByText('Flex')).toBeInTheDocument()
-
-      rerender(<FuelBadge fuelType="ELETRICO" />)
-      expect(screen.getByText('Elétrico')).toBeInTheDocument()
-
-      rerender(<FuelBadge fuelType="HIBRIDO" />)
-      expect(screen.getByText('Híbrido')).toBeInTheDocument()
-
-      rerender(<FuelBadge fuelType="DIESEL" />)
-      expect(screen.getByText('Diesel')).toBeInTheDocument()
-    })
+describe('Badge', () => {
+  it('renders its children', () => {
+    render(<Badge>Estoque Central</Badge>)
+    expect(screen.getByText('Estoque Central')).toBeInTheDocument()
   })
 
-  describe('Button', () => {
-    it('renders label and handles click', async () => {
-      const user = userEvent.setup()
-      const handleClick = vi.fn()
-      render(<Button onClick={handleClick}>Salvar</Button>)
+  it('applies the default variant class when no variant is specified', () => {
+    render(<Badge>Tag</Badge>)
+    expect(screen.getByText('Tag')).toBeInTheDocument()
+  })
+})
 
-      const btn = screen.getByRole('button', { name: 'Salvar' })
-      expect(btn).toBeInTheDocument()
-      await user.click(btn)
-      expect(handleClick).toHaveBeenCalledTimes(1)
-    })
+describe('FuelBadge', () => {
+  it.each(FUEL_BADGE_FIXTURES)('renders "$label" for fuelType $fuelType', ({ fuelType, label }) => {
+    render(<FuelBadge fuelType={fuelType} />)
+    expect(screen.getByText(label)).toBeInTheDocument()
+  })
+})
 
-    it('shows loading spinner and disables button when isLoading is true', () => {
-      render(<Button isLoading>Processando</Button>)
-      const btn = screen.getByRole('button')
-      expect(btn).toBeDisabled()
-      expect(screen.getByText('Processando')).toBeInTheDocument()
-    })
+describe('Button', () => {
+  it('renders its label and is accessible via role', () => {
+    render(<Button>Salvar</Button>)
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeInTheDocument()
   })
 
-  describe('Input', () => {
-    it('displays error message when error prop is provided', () => {
-      render(<Input label="Razão Social" name="corporateName" error="Campo obrigatório" />)
-      expect(screen.getByLabelText('Razão Social')).toBeInTheDocument()
-      expect(screen.getByText('Campo obrigatório')).toBeInTheDocument()
-    })
+  it('calls onClick handler when clicked', async () => {
+    const user = userEvent.setup()
+    const handleClick = vi.fn()
+    render(<Button onClick={handleClick}>Enviar</Button>)
+
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    expect(handleClick).toHaveBeenCalledTimes(1)
   })
 
-  describe('DeleteConfirmModal', () => {
-    it('calls onConfirm when clicking confirm button', async () => {
-      const user = userEvent.setup()
-      const onConfirm = vi.fn()
-      const onClose = vi.fn()
+  it('is disabled and does not call onClick when isLoading is true', async () => {
+    const user = userEvent.setup()
+    const handleClick = vi.fn()
+    render(<Button isLoading onClick={handleClick}>Processando</Button>)
 
-      render(
-        <DeleteConfirmModal
-          isOpen={true}
-          onClose={onClose}
-          onConfirm={onConfirm}
-          title="Excluir Concessionária"
-          description="Tem certeza que deseja excluir?"
-        />
-      )
+    const btn = screen.getByRole('button')
+    expect(btn).toBeDisabled()
+    await user.click(btn)
+    expect(handleClick).not.toHaveBeenCalled()
+  })
 
-      expect(screen.getByText('Excluir Concessionária')).toBeInTheDocument()
-      expect(screen.getByText('Tem certeza que deseja excluir?')).toBeInTheDocument()
+  it('shows the label text while loading', () => {
+    render(<Button isLoading>Salvando…</Button>)
+    expect(screen.getByText('Salvando…')).toBeInTheDocument()
+  })
+})
 
-      const deleteBtn = screen.getByRole('button', { name: 'Excluir' })
-      await user.click(deleteBtn)
-      expect(onConfirm).toHaveBeenCalledTimes(1)
+describe('Input', () => {
+  it('renders a labelled input accessible by its label text', () => {
+    render(<Input label="Razão Social" name="corporateName" />)
+    expect(screen.getByLabelText('Razão Social')).toBeInTheDocument()
+  })
 
-      const cancelBtn = screen.getByRole('button', { name: 'Cancelar' })
-      await user.click(cancelBtn)
-      expect(onClose).toHaveBeenCalledTimes(1)
-    })
+  it('displays an error message below the input', () => {
+    render(<Input label="CNPJ" name="cnpj" error="CNPJ inválido" />)
+    expect(screen.getByText('CNPJ inválido')).toBeInTheDocument()
+  })
+
+  it('does not display an error section when no error is provided', () => {
+    render(<Input label="Email" name="email" />)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('forwards typed characters to the input element', async () => {
+    const user = userEvent.setup()
+    render(<Input label="Marca" name="brand" />)
+    const input = screen.getByLabelText('Marca')
+    await user.type(input, 'Toyota')
+    expect(input).toHaveValue('Toyota')
+  })
+})
+
+describe('DeleteConfirmModal', () => {
+  const defaultProps = {
+    isOpen: true,
+    onClose: vi.fn(),
+    onConfirm: vi.fn(),
+    title: 'Excluir Concessionária',
+    description: 'Tem certeza que deseja excluir esta concessionária?',
+  }
+
+  it('renders title and description when open', () => {
+    render(<DeleteConfirmModal {...defaultProps} />)
+    expect(screen.getByText('Excluir Concessionária')).toBeInTheDocument()
+    expect(screen.getByText('Tem certeza que deseja excluir esta concessionária?')).toBeInTheDocument()
+  })
+
+  it('does not render content when isOpen is false', () => {
+    render(<DeleteConfirmModal {...defaultProps} isOpen={false} />)
+    expect(screen.queryByText('Excluir Concessionária')).not.toBeInTheDocument()
+  })
+
+  it('calls onConfirm when the delete button is clicked', async () => {
+    const user = userEvent.setup()
+    const onConfirm = vi.fn()
+    render(<DeleteConfirmModal {...defaultProps} onConfirm={onConfirm} />)
+
+    await user.click(screen.getByRole('button', { name: 'Excluir' }))
+
+    expect(onConfirm).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls onClose when the cancel button is clicked', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(<DeleteConfirmModal {...defaultProps} onClose={onClose} />)
+
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('disables the confirm button and shows loading state', () => {
+    render(<DeleteConfirmModal {...defaultProps} isLoading />)
+    const deleteBtn = screen.getByRole('button', { name: 'Excluir' })
+    expect(deleteBtn).toBeDisabled()
   })
 })

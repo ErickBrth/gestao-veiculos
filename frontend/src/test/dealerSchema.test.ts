@@ -1,91 +1,134 @@
 import { describe, it, expect } from 'vitest'
-import { dealerSchema } from '../schemas/dealerSchema'
+import { dealerSchema, addressSchema } from '../schemas/dealerSchema'
+import {
+  VALID_CNPJS,
+  INVALID_CNPJS,
+  VALID_ADDRESS_INPUT,
+  VALID_DEALER_INPUT,
+} from './fixtures'
 
-describe('dealerSchema and CNPJ validation', () => {
-  it('validates a correct dealer with valid CNPJ and complete address', () => {
-    const validData = {
-      corporateName: 'Auto Sul Distribuidora de Veículos LTDA',
-      cnpj: '11.222.333/0001-81', // valid formatted CNPJ
-      address: {
-        zipCode: '01001-000',
-        street: 'Praça da Sé',
-        number: '123',
-        complement: 'Sala 4',
-        neighborhood: 'Sé',
-        city: 'São Paulo',
-        state: 'SP',
-      },
+describe('CNPJ validation (dealerSchema)', () => {
+  const baseValid = {
+    corporateName: 'Auto Sul LTDA',
+    address: VALID_ADDRESS_INPUT,
+  }
+
+  describe.each(VALID_CNPJS.map((cnpj) => ({ cnpj })))(
+    'accepts $cnpj as valid',
+    ({ cnpj }) => {
+      it('parses successfully', () => {
+        const result = dealerSchema.safeParse({ ...baseValid, cnpj })
+        expect(result.success).toBe(true)
+      })
     }
+  )
 
-    const result = dealerSchema.safeParse(validData)
+  describe.each(INVALID_CNPJS.map((cnpj) => ({ cnpj })))(
+    'rejects $cnpj as invalid',
+    ({ cnpj }) => {
+      it('returns a cnpj error', () => {
+        const result = dealerSchema.safeParse({ ...baseValid, cnpj })
+        expect(result.success).toBe(false)
+        if (!result.success) {
+          const paths = result.error.errors.map((e) => e.path.join('.'))
+          expect(paths).toContain('cnpj')
+        }
+      })
+    }
+  )
+})
+
+describe('addressSchema', () => {
+  it('accepts a complete, valid address', () => {
+    const result = addressSchema.safeParse({ ...VALID_ADDRESS_INPUT, complement: 'Sala 4' })
     expect(result.success).toBe(true)
   })
 
-  it('rejects invalid CNPJ check digits', () => {
-    const invalidData = {
-      corporateName: 'Auto Sul',
-      cnpj: '11.222.333/0001-82', // invalid check digit
-      address: {
-        zipCode: '01001000',
-        street: 'Rua A',
-        number: '1',
-        neighborhood: 'Centro',
-        city: 'São Paulo',
-        state: 'SP',
-      },
-    }
+  it('accepts address without optional complement', () => {
+    const result = addressSchema.safeParse(VALID_ADDRESS_INPUT)
+    expect(result.success).toBe(true)
+  })
 
-    const result = dealerSchema.safeParse(invalidData)
+  it('accepts formatted CEP with hyphen', () => {
+    const result = addressSchema.safeParse({ ...VALID_ADDRESS_INPUT, zipCode: '01001-000' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects CEP with fewer than 8 digits', () => {
+    const result = addressSchema.safeParse({ ...VALID_ADDRESS_INPUT, zipCode: '12345' })
     expect(result.success).toBe(false)
     if (!result.success) {
-      const errorPaths = result.error.errors.map((e) => e.path.join('.'))
-      expect(errorPaths).toContain('cnpj')
-      expect(result.error.errors[0].message).toBe('CNPJ inválido')
+      expect(result.error.errors[0].message).toBe('CEP deve conter 8 dígitos')
     }
   })
 
-  it('rejects repeated digits CNPJ', () => {
-    const repeated = {
-      corporateName: 'Auto Sul',
-      cnpj: '11111111111111',
-      address: {
-        zipCode: '01001000',
-        street: 'Rua A',
-        number: '1',
-        neighborhood: 'Centro',
-        city: 'São Paulo',
-        state: 'SP',
-      },
+  it('normalises state to uppercase', () => {
+    const result = addressSchema.safeParse({ ...VALID_ADDRESS_INPUT, state: 'sp' })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.state).toBe('SP')
     }
+  })
 
-    const result = dealerSchema.safeParse(repeated)
+  it('rejects state with more than 2 characters', () => {
+    const result = addressSchema.safeParse({ ...VALID_ADDRESS_INPUT, state: 'SPO' })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.errors[0].message).toBe('UF deve ter 2 letras')
+    }
+  })
+
+  it('rejects empty required fields and reports each path', () => {
+    const result = addressSchema.safeParse({
+      zipCode: '',
+      street: '',
+      number: '',
+      neighborhood: '',
+      city: '',
+      state: 'SP',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const paths = result.error.errors.map((e) => e.path.join('.'))
+      expect(paths).toContain('zipCode')
+      expect(paths).toContain('street')
+      expect(paths).toContain('number')
+      expect(paths).toContain('neighborhood')
+      expect(paths).toContain('city')
+    }
+  })
+})
+
+describe('dealerSchema', () => {
+  it('validates a complete, correct dealer object', () => {
+    expect(dealerSchema.safeParse(VALID_DEALER_INPUT).success).toBe(true)
+  })
+
+  it('rejects empty corporateName', () => {
+    const result = dealerSchema.safeParse({ ...VALID_DEALER_INPUT, corporateName: '' })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.errors[0].message).toBe('Razão social é obrigatória')
+    }
+  })
+
+  it('rejects corporateName longer than 150 characters', () => {
+    const result = dealerSchema.safeParse({ ...VALID_DEALER_INPUT, corporateName: 'A'.repeat(151) })
     expect(result.success).toBe(false)
   })
 
-  it('rejects missing corporateName and invalid address state', () => {
-    const data = {
+  it('reports multiple independent errors in a single parse', () => {
+    const result = dealerSchema.safeParse({
       corporateName: '',
-      cnpj: '11.222.333/0001-81',
-      address: {
-        zipCode: '123',
-        street: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: 'SPO', // more than 2 chars
-      },
-    }
-
-    const result = dealerSchema.safeParse(data)
+      cnpj: '11111111111111',
+      address: { ...VALID_DEALER_INPUT.address, zipCode: '123' },
+    })
     expect(result.success).toBe(false)
     if (!result.success) {
-      const errorMap = Object.fromEntries(
-        result.error.errors.map((e) => [e.path.join('.'), e.message])
-      )
-      expect(errorMap['corporateName']).toBe('Razão social é obrigatória')
-      expect(errorMap['address.zipCode']).toBe('CEP deve conter 8 dígitos')
-      expect(errorMap['address.street']).toBe('Logradouro é obrigatório')
-      expect(errorMap['address.state']).toBe('UF deve ter 2 letras')
+      const paths = result.error.errors.map((e) => e.path.join('.'))
+      expect(paths).toContain('corporateName')
+      expect(paths).toContain('cnpj')
+      expect(paths).toContain('address.zipCode')
     }
   })
 })
