@@ -1,11 +1,14 @@
-export type FuelType =
-  | 'FLEX'
-  | 'GASOLINA'
-  | 'ETANOL'
-  | 'DIESEL'
-  | 'HIBRIDO'
-  | 'ELETRICO'
-  | 'GNV'
+export const FuelType = {
+  FLEX: 'FLEX',
+  GASOLINA: 'GASOLINA',
+  ETANOL: 'ETANOL',
+  DIESEL: 'DIESEL',
+  HIBRIDO: 'HIBRIDO',
+  ELETRICO: 'ELETRICO',
+  GNV: 'GNV',
+} as const
+
+export type FuelType = (typeof FuelType)[keyof typeof FuelType]
 
 export interface Address {
   zipCode: string

@@ -7,26 +7,24 @@ import { useAssignDealer } from '../../services/vehicleService'
 import { toast } from 'sonner'
 import type { VehicleResponse } from '../../types'
 import { Building2, Unlink } from 'lucide-react'
+import { buildDealerSelectOptions } from '../../utils/vehicleMetrics'
 
 interface AssignDealerModalProps {
   isOpen: boolean
   onClose: () => void
-  vehicle: VehicleResponse | null
+  vehicle?: VehicleResponse | null
 }
 
 export function AssignDealerModal({ isOpen, onClose, vehicle }: AssignDealerModalProps) {
+  const [selectedDealerId, setSelectedDealerId] = useState<string>('')
   const { data: dealers, isLoading: isLoadingDealers } = useDealers()
   const assignDealer = useAssignDealer()
-
-  const [selectedDealerId, setSelectedDealerId] = useState<string>(
-    vehicle?.dealer?.id ? String(vehicle.dealer.id) : ''
-  )
 
   if (!vehicle) return null
 
   const handleSave = async () => {
-    const dealerId = selectedDealerId === '' ? null : Number(selectedDealerId)
     try {
+      const dealerId = selectedDealerId ? Number(selectedDealerId) : null
       await assignDealer.mutateAsync({
         id: vehicle.id,
         data: { dealerId },
@@ -43,13 +41,9 @@ export function AssignDealerModal({ isOpen, onClose, vehicle }: AssignDealerModa
     }
   }
 
-  const dealerOptions = [
-    { value: '', label: 'Sem concessionária (Estoque Central)' },
-    ...(dealers?.map((d) => ({
-      value: String(d.id),
-      label: `${d.corporateName} (ID: ${d.id})`,
-    })) || []),
-  ]
+  const dealerOptions = buildDealerSelectOptions(dealers, 'Sem concessionária (Estoque Central)')
+
+  const currentSelectedValue = selectedDealerId !== '' ? selectedDealerId : (vehicle.dealer ? String(vehicle.dealer.id) : '')
 
   return (
     <Modal
@@ -60,22 +54,22 @@ export function AssignDealerModal({ isOpen, onClose, vehicle }: AssignDealerModa
       maxWidth="md"
     >
       <div className="space-y-4">
-        <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
+        <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
           <div>
-            <span className="text-slate-500 block">Veículo</span>
-            <span className="font-semibold text-slate-100 text-sm">
+            <span className="text-slate-400 block mb-0.5">Veículo</span>
+            <span className="font-semibold text-slate-800 text-sm">
               {vehicle.brand} {vehicle.model}
             </span>
           </div>
           <div className="text-right">
-            <span className="text-slate-500 block">Status atual</span>
+            <span className="text-slate-400 block mb-0.5">Status atual</span>
             {vehicle.dealer ? (
-              <span className="inline-flex items-center gap-1 text-indigo-400 font-medium">
-                <Building2 className="w-3.5 h-3.5" />
+              <span className="inline-flex items-center gap-1 text-slate-700 font-medium">
+                <Building2 className="w-3.5 h-3.5 text-slate-500" />
                 {vehicle.dealer.corporateName}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-amber-400 font-medium">
+              <span className="inline-flex items-center gap-1 text-slate-500 font-medium">
                 <Unlink className="w-3.5 h-3.5" />
                 Não atribuído
               </span>
@@ -85,13 +79,13 @@ export function AssignDealerModal({ isOpen, onClose, vehicle }: AssignDealerModa
 
         <Select
           label="Concessionária Destino"
-          value={selectedDealerId}
+          value={currentSelectedValue}
           onChange={(e) => setSelectedDealerId(e.target.value)}
           options={dealerOptions}
           disabled={isLoadingDealers}
         />
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/80">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>

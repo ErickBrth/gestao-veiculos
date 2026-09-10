@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { vehicleSchema, type VehicleFormData } from '../../schemas/vehicleSchema'
+import { vehicleSchema, type VehicleFormData, type VehicleFormInput } from '../../schemas/vehicleSchema'
 import { useCreateVehicle, useUpdateVehicle } from '../../services/vehicleService'
 import { useDealers } from '../../services/dealerService'
 import { Modal } from '../ui/Modal'
@@ -10,7 +10,8 @@ import { Select } from '../ui/Select'
 import { Button } from '../ui/Button'
 import { ApiError } from '../../api/client'
 import { toast } from 'sonner'
-import type { VehicleResponse, FuelType } from '../../types'
+import { FuelType, type VehicleResponse, type VehicleRequest } from '../../types'
+import { buildDealerSelectOptions } from '../../utils/vehicleMetrics'
 
 interface VehicleFormModalProps {
   isOpen: boolean
@@ -18,7 +19,12 @@ interface VehicleFormModalProps {
   vehicleToEdit?: VehicleResponse | null
 }
 
-const FUEL_OPTIONS = [
+export interface FuelOption {
+  value: FuelType
+  label: string
+}
+
+const FUEL_OPTIONS: FuelOption[] = [
   { value: 'FLEX', label: 'Flex' },
   { value: 'GASOLINA', label: 'Gasolina' },
   { value: 'ETANOL', label: 'Etanol' },
@@ -40,12 +46,12 @@ export function VehicleFormModal({ isOpen, onClose, vehicleToEdit }: VehicleForm
     setError,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<VehicleFormData>({
+  } = useForm<VehicleFormInput, unknown, VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
       brand: '',
       model: '',
-      fuelType: 'FLEX' as FuelType,
+      fuelType: FuelType.FLEX,
       color: '',
       manufactureYear: new Date().getFullYear(),
       chassis: '',
@@ -85,8 +91,11 @@ export function VehicleFormModal({ isOpen, onClose, vehicleToEdit }: VehicleForm
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
-      const payload = {
-        ...data,
+      const payload: VehicleRequest = {
+        brand: data.brand,
+        model: data.model,
+        fuelType: data.fuelType,
+        color: data.color,
         manufactureYear: data.manufactureYear ? Number(data.manufactureYear) : null,
         price: data.price ? Number(data.price) : null,
         dealerId: data.dealerId ? Number(data.dealerId) : null,
@@ -106,8 +115,7 @@ export function VehicleFormModal({ isOpen, onClose, vehicleToEdit }: VehicleForm
       if (err instanceof ApiError) {
         if (err.problemDetail.errors) {
           Object.entries(err.problemDetail.errors).forEach(([field, msg]) => {
-            // @ts-expect-error dynamic field mapping
-            setError(field, { message: msg })
+            setError(field as Parameters<typeof setError>[0], { message: msg })
           })
         }
         toast.error(err.problemDetail.detail || err.problemDetail.title)
@@ -117,13 +125,7 @@ export function VehicleFormModal({ isOpen, onClose, vehicleToEdit }: VehicleForm
     }
   }
 
-  const dealerOptions = [
-    { value: '', label: 'Sem concessionária (Estoque central)' },
-    ...(dealers?.map((d) => ({
-      value: String(d.id),
-      label: d.corporateName,
-    })) || []),
-  ]
+  const dealerOptions = buildDealerSelectOptions(dealers, 'Sem concessionária (Estoque central)')
 
   return (
     <Modal
@@ -207,7 +209,7 @@ export function VehicleFormModal({ isOpen, onClose, vehicleToEdit }: VehicleForm
           {...register('dealerId')}
         />
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/80 mt-6">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 mt-6">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>

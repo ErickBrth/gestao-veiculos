@@ -9,7 +9,7 @@ import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { ApiError } from '../../api/client'
 import { toast } from 'sonner'
-import type { DealerResponse } from '../../types'
+import type { DealerResponse, DealerRequest } from '../../types'
 import { Loader2 } from 'lucide-react'
 
 interface DealerFormModalProps {
@@ -96,11 +96,25 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
 
   const onSubmit = async (data: DealerFormData) => {
     try {
+      const payload: DealerRequest = {
+        corporateName: data.corporateName,
+        cnpj: data.cnpj,
+        address: {
+          zipCode: data.address.zipCode,
+          street: data.address.street,
+          number: data.address.number,
+          complement: data.address.complement || null,
+          neighborhood: data.address.neighborhood,
+          city: data.address.city,
+          state: data.address.state,
+        },
+      }
+
       if (isEditing && dealerToEdit) {
-        await updateDealer.mutateAsync({ id: dealerToEdit.id, data })
+        await updateDealer.mutateAsync({ id: dealerToEdit.id, data: payload })
         toast.success('Concessionária atualizada com sucesso!')
       } else {
-        await createDealer.mutateAsync(data)
+        await createDealer.mutateAsync(payload)
         toast.success('Concessionária cadastrada com sucesso!')
       }
       onClose()
@@ -108,8 +122,7 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
       if (err instanceof ApiError) {
         if (err.problemDetail.errors) {
           Object.entries(err.problemDetail.errors).forEach(([field, msg]) => {
-            // @ts-expect-error dynamic field mapping from RFC 7807
-            setError(field, { message: msg })
+            setError(field as Parameters<typeof setError>[0], { message: msg })
           })
         }
         toast.error(err.problemDetail.detail || err.problemDetail.title)
@@ -144,13 +157,13 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
           />
         </div>
 
-        <div className="border-t border-slate-800/80 pt-4 mt-2">
+        <div className="border-t border-slate-200 pt-4 mt-2">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Endereço
             </h4>
             {isLookingUpAddress && (
-              <span className="flex items-center gap-1.5 text-xs text-indigo-400">
+              <span className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando CEP...
               </span>
             )}
@@ -221,7 +234,7 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/80 mt-6">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 mt-6">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
