@@ -36,4 +36,5 @@ export const vehicleSchema = z.object({
     ),
 })
 
+export type VehicleFormInput = z.input<typeof vehicleSchema>
 export type VehicleFormData = z.infer<typeof vehicleSchema>

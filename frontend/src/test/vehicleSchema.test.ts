@@ -6,12 +6,13 @@ import {
   VALID_FUEL_TYPES,
   VALID_VEHICLE_INPUT,
 } from './fixtures'
+import type { FuelType } from '../types'
 
 describe('vehicleSchema — chassis validation', () => {
   const baseValid = {
     brand: 'Toyota',
     model: 'Yaris',
-    fuelType: 'FLEX' as const,
+    fuelType: 'FLEX' as FuelType,
     color: 'Prata',
   }
 
@@ -112,7 +113,7 @@ describe('vehicleSchema — price validation', () => {
 })
 
 describe('vehicleSchema — manufactureYear validation', () => {
-  const base = { brand: 'Toyota', model: 'Yaris', fuelType: 'FLEX' as const, color: 'Prata' }
+  const base = { brand: 'Toyota', model: 'Yaris', fuelType: 'FLEX' as FuelType, color: 'Prata' }
 
   it('accepts a year within valid range', () => {
     expect(vehicleSchema.safeParse({ ...base, manufactureYear: 2024 }).success).toBe(true)
