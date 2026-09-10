@@ -48,7 +48,7 @@ public class VehicleService {
 
     @Transactional(readOnly = true)
     public List<VehicleResponse> findByDealer(Long dealerId) {
-        dealerService.getOrThrow(dealerId); // 404 for an unknown dealer instead of an empty list
+        dealerService.getOrThrow(dealerId);
         return repository.findByDealerId(dealerId).stream().map(VehicleMapper::toResponse).toList();
     }
 

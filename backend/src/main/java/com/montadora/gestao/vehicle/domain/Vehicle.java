@@ -68,7 +68,6 @@ public class Vehicle {
     private OffsetDateTime updatedAt;
 
     protected Vehicle() {
-        // required by JPA
     }
 
     public Vehicle(String brand, String model, FuelType fuelType, String color, Short manufactureYear,

@@ -57,7 +57,6 @@ public class VehicleController {
         return service.update(id, request);
     }
 
-    /** PATCH because this changes a single relationship, not the whole resource. */
     @PatchMapping("/{id}/dealer")
     public VehicleResponse assignDealer(@PathVariable Long id,
                                         @RequestBody AssignDealerRequest request) {
