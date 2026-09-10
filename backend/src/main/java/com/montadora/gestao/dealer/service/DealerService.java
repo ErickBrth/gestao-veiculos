@@ -1,5 +1,12 @@
 package com.montadora.gestao.dealer.service;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.montadora.gestao.dealer.domain.Dealer;
 import com.montadora.gestao.dealer.dto.DealerRequest;
 import com.montadora.gestao.dealer.dto.DealerResponse;
@@ -7,12 +14,6 @@ import com.montadora.gestao.dealer.mapper.DealerMapper;
 import com.montadora.gestao.dealer.repository.DealerRepository;
 import com.montadora.gestao.shared.exception.BusinessException;
 import com.montadora.gestao.shared.exception.NotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class DealerService {

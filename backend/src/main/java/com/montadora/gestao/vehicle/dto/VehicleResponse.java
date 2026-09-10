@@ -1,8 +1,8 @@
 package com.montadora.gestao.vehicle.dto;
 
-import com.montadora.gestao.vehicle.domain.FuelType;
-
 import java.math.BigDecimal;
+
+import com.montadora.gestao.vehicle.domain.FuelType;
 
 public record VehicleResponse(
         Long id,

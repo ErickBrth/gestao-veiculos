@@ -1,9 +1,9 @@
 package com.montadora.gestao.dealer.controller;
 
-import com.montadora.gestao.dealer.dto.DealerRequest;
-import com.montadora.gestao.dealer.dto.DealerResponse;
-import com.montadora.gestao.dealer.service.DealerService;
+import java.util.List;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.List;
+import com.montadora.gestao.dealer.dto.DealerRequest;
+import com.montadora.gestao.dealer.dto.DealerResponse;
+import com.montadora.gestao.dealer.service.DealerService;
 
 @RestController
 @RequestMapping("/dealer")

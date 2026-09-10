@@ -1,5 +1,12 @@
 package com.montadora.gestao.vehicle.service;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.montadora.gestao.dealer.domain.Dealer;
 import com.montadora.gestao.dealer.service.DealerService;
 import com.montadora.gestao.shared.exception.BusinessException;
@@ -10,12 +17,6 @@ import com.montadora.gestao.vehicle.dto.VehicleRequest;
 import com.montadora.gestao.vehicle.dto.VehicleResponse;
 import com.montadora.gestao.vehicle.mapper.VehicleMapper;
 import com.montadora.gestao.vehicle.repository.VehicleRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class VehicleService {

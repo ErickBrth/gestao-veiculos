@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/fleet
+    username: fleet
+    password: fleet
+  docker:
+    compose:
+      enabled: false
+  jpa:
+    properties:
+      hibernate.format_sql: false
+
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    com.montadora.gestao: INFO

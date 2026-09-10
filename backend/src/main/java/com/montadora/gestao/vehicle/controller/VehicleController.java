@@ -1,10 +1,9 @@
 package com.montadora.gestao.vehicle.controller;
 
-import com.montadora.gestao.vehicle.dto.AssignDealerRequest;
-import com.montadora.gestao.vehicle.dto.VehicleRequest;
-import com.montadora.gestao.vehicle.dto.VehicleResponse;
-import com.montadora.gestao.vehicle.service.VehicleService;
+import java.util.List;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +17,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.List;
+import com.montadora.gestao.vehicle.dto.AssignDealerRequest;
+import com.montadora.gestao.vehicle.dto.VehicleRequest;
+import com.montadora.gestao.vehicle.dto.VehicleResponse;
+import com.montadora.gestao.vehicle.service.VehicleService;
 
 @RestController
 @RequestMapping("/vehicles")
