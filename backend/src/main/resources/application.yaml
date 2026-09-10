@@ -18,7 +18,7 @@ spring:
     clients:
       connect-timeout: 2s
       read-timeout: 3s
-    serviceClient:
+    serviceclient:
       viacep:
         base-url: https://viacep.com.br/ws
         connect-timeout: 2s
@@ -36,26 +36,3 @@ management:
 logging:
   level:
     com.montadora.gestao: DEBUG
-
----
-spring:
-  config:
-    activate:
-      on-profile: docker
-  datasource:
-    url: jdbc:postgresql://postgres:5432/fleet
-    username: fleet
-    password: fleet
-  docker:
-    compose:
-      enabled: false
-  jpa:
-    properties:
-      hibernate.format_sql: false
-
-logging:
-  structured:
-    format:
-      console: ecs
-  level:
-    com.montadora.gestao: INFO

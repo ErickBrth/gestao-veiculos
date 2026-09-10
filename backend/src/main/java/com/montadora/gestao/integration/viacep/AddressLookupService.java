@@ -1,11 +1,12 @@
 package com.montadora.gestao.integration.viacep;
 
-import com.montadora.gestao.shared.exception.BusinessException;
-import com.montadora.gestao.shared.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
+
+import com.montadora.gestao.shared.exception.BusinessException;
+import com.montadora.gestao.shared.exception.NotFoundException;
 
 @Service
 public class AddressLookupService {

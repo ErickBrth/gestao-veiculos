@@ -11,6 +11,6 @@ public record ViaCepResponse(
 ) {
 
     public boolean notFound() {
-        return erro != null || cep == null;
+        return "true".equalsIgnoreCase(erro) || Boolean.parseBoolean(erro) || cep == null;
     }
 }

@@ -1,11 +1,12 @@
 package com.montadora.gestao.vehicle.repository;
 
-import com.montadora.gestao.vehicle.domain.Vehicle;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
-import java.util.Optional;
+import com.montadora.gestao.vehicle.domain.Vehicle;
 
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 

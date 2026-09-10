@@ -1,6 +1,7 @@
 package com.montadora.gestao.vehicle.dto;
 
-import com.montadora.gestao.vehicle.domain.FuelType;
+import java.math.BigDecimal;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -9,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import java.math.BigDecimal;
+import com.montadora.gestao.vehicle.domain.FuelType;
 
 public record VehicleRequest(
 

@@ -1,6 +1,8 @@
 package com.montadora.gestao.vehicle.domain;
 
-import com.montadora.gestao.dealer.domain.Dealer;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,8 +17,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import com.montadora.gestao.dealer.domain.Dealer;
 
 @Entity
 @Table(name = "vehicle")

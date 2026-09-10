@@ -1,5 +1,7 @@
 package com.montadora.gestao.dealer.domain;
 
+import java.time.OffsetDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -9,8 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-
-import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "dealer")
