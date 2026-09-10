@@ -1,0 +1,71 @@
+@host = http://localhost:8080
+
+### List dealers
+GET {{host}}/dealer
+
+### Create dealer
+POST {{host}}/dealer
+Content-Type: application/json
+
+{
+  "corporateName": "Concessionária Oeste LTDA",
+  "cnpj": "45.678.901/0001-23",
+  "address": { "zipCode": "58400000", "city": "Campina Grande", "state": "PB" }
+}
+
+### Invalid CNPJ -> 422
+POST {{host}}/dealer
+Content-Type: application/json
+
+{
+  "corporateName": "Teste",
+  "cnpj": "11111111111111",
+  "address": { "city": "Recife", "state": "PE" }
+}
+
+### List vehicles
+GET {{host}}/vehicles
+
+### List unassigned vehicles
+GET {{host}}/vehicles?unassigned=true
+
+### List vehicles of a dealer
+GET {{host}}/dealer/1/vehicles
+
+### Create vehicle without dealer
+POST {{host}}/vehicles
+Content-Type: application/json
+
+{
+  "brand": "Nissan",
+  "model": "Kicks",
+  "fuelType": "FLEX",
+  "color": "Branco",
+  "manufactureYear": 2025,
+  "chassis": "94DFCAAP1SB100006",
+  "price": 139900.00
+}
+
+### Assign vehicle 7 to dealer 1
+PATCH {{host}}/vehicles/7/dealer
+Content-Type: application/json
+
+{ "dealerId": 1 }
+
+### Detach vehicle 7
+PATCH {{host}}/vehicles/7/dealer
+Content-Type: application/json
+
+{ "dealerId": null }
+
+### Invalid fuel type -> 400
+POST {{host}}/vehicles
+Content-Type: application/json
+
+{ "brand": "X", "model": "Y", "fuelType": "NUCLEAR", "color": "Azul" }
+
+### CEP lookup
+GET {{host}}/addresses/58400000
+
+### Unknown CEP -> 404
+GET {{host}}/addresses/99999999
