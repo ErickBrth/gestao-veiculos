@@ -3,9 +3,6 @@ package com.montadora.gestao.shared.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-/**
-
- */
 public class CnpjValidator implements ConstraintValidator<Cnpj, String> {
 
     private static final int[] FIRST_DIGIT_WEIGHTS  = { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
