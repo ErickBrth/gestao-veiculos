@@ -16,7 +16,7 @@ Sistema completo para gestão comercial de veículos e concessionárias de monta
 - **Testes**: JUnit 5, Mockito, Testcontainers, ArchUnit
 
 ### Frontend
-- **React 18** + **TypeScript** + **Vite**
+- **React 19** + **TypeScript** + **Vite**
 - **Tailwind CSS** + **Lucide Icons**
 - **TanStack Query** (gerenciamento de estado assíncrono e cache)
 - **React Hook Form** + **Zod** (validação client-side)
@@ -104,16 +104,13 @@ Todas as respostas de erro seguem o padrão **RFC 7807 (`ProblemDetail`)**.
 
 Uma coleção completa de requisições executáveis está disponível no arquivo [`backend/http/api.http`](file:///backend/http/api.http), e a especificação detalhada de contratos está em [`docs/api/endpoints.md`](file:///docs/api/endpoints.md).
 
-> **Nota sobre Swagger/OpenAPI (Spring Boot 4.1.1 + Jackson 3)**:
-> Conforme definido nas diretrizes de arquitetura (`AGENTS.md`), o ecossistema `springdoc-openapi` ainda não possui suporte estável oficial para o **Spring Boot 4.1.1** com **Jackson 3** (`tools.jackson..`) e modularidade estrita de starters. Por isso, a documentação formal e interativa foi padronizada através da especificação viva em [`backend/http/api.http`](file:///backend/http/api.http) (compatível com REST Client do VS Code / IntelliJ / JetBrains HTTP Client) e na tabela detalhada em [`docs/api/endpoints.md`](file:///docs/api/endpoints.md).
-
 ---
 
 ## 🏛️ Padrões de Projeto e Qualidade
 
 - **SOLID & Clean Code**: Responsabilidades segregadas, métodos curtos e intencionais.
 - **Camada de Serviço & Transações**: `@Transactional(readOnly = true)` nas leituras e controle transacional nas mutações.
-- **DTOs & Mappers Puros**: Conversões explícitas sem bibliotecas de reflexão/geração mágica.
+- **DTOs & Mappers Puros**: Conversões explícitas sem bibliotecas de reflexão/geração
 - **Tratamento de Exceções Centralizado**: `GlobalExceptionHandler` mapeia exceções de domínio para RFC 7807.
 - **Segurança de Rede**: Filtro SSRF (`InetAddressFilter.externalAddresses()`) no consumo da API ViaCEP.
 - **Testes Arquiteturais**: ArchUnit garantindo que dependências apontem apenas para baixo no fluxo em camadas.
@@ -122,5 +119,6 @@ Uma coleção completa de requisições executáveis está disponível no arquiv
 
 ## 📄 Documentação Adicional
 
-- [Documento de Arquitetura e Decisões Técnicas (ADRs)](file:///docs/architecture.md)
-- [Regras e Diretrizes do Projeto (AGENTS.md)](file:///AGENTS.md)
+- [`backend/http/api.http`](backend/http/api.http)
+- [Arquitetura e ADRs](docs/architecture.md)
+
