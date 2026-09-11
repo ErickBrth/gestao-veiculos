@@ -29,16 +29,15 @@ export const addressSchema = z.object({
     .string()
     .min(1, 'CEP é obrigatório')
     .refine((val) => val.replace(/\D/g, '').length === 8, 'CEP deve conter 8 dígitos'),
-  street: z.string().min(1, 'Logradouro é obrigatório'),
-  number: z.string().min(1, 'Número é obrigatório'),
-  complement: z.string().optional().nullable(),
-  neighborhood: z.string().min(1, 'Bairro é obrigatório'),
-  city: z.string().min(1, 'Cidade é obrigatória'),
+  street: z.string().min(1, 'Logradouro é obrigatório').max(150),
+  number: z.string().min(1, 'Número é obrigatório').max(20),
+  complement: z.string().max(100).optional().nullable(),
+  neighborhood: z.string().min(1, 'Bairro é obrigatório').max(100),
+  city: z.string().min(1, 'Cidade é obrigatória').max(100),
   state: z
     .string()
-    .min(2, 'UF inválida')
-    .max(2, 'UF deve ter 2 letras')
-    .toUpperCase(),
+    .length(2, 'UF deve ter 2 letras')
+    .transform((val) => val.toUpperCase()),
 })
 
 export const dealerSchema = z.object({
