@@ -97,6 +97,17 @@ describe('vehicleSchema — price validation', () => {
     expect(vehicleSchema.safeParse({ ...base, price: null }).success).toBe(true)
   })
 
+  it('accepts a price with two decimal places', () => {
+    const result = vehicleSchema.safeParse({ ...VALID_VEHICLE_INPUT, price: 100.99 })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts other floating point edge cases with cents', () => {
+    for (const price of [0.01, 1.99, 149_900.29, 8.07]) {
+      expect(vehicleSchema.safeParse({ ...VALID_VEHICLE_INPUT, price }).success).toBe(true)
+    }
+  })
+
   it('accepts empty string price', () => {
     expect(vehicleSchema.safeParse({ ...base, price: '' }).success).toBe(true)
   })
@@ -159,3 +170,37 @@ describe('vehicleSchema — full object', () => {
     }
   })
 })
+
+describe('vehicleSchema — price limits', () => {
+  it('accepts the maximum value NUMERIC(12,2) can hold', () => {
+    const result = vehicleSchema.safeParse({
+      ...VALID_VEHICLE_INPUT,
+      price: 9_999_999_999.99,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a price beyond the column capacity', () => {
+    const result = vehicleSchema.safeParse({
+      ...VALID_VEHICLE_INPUT,
+      price: 99_999_999_999,
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects more than two decimal places', () => {
+    const result = vehicleSchema.safeParse({ ...VALID_VEHICLE_INPUT, price: 100.999 })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('vehicleSchema — manufactureYear', () => {
+  it('rejects a fractional year', () => {
+    const result = vehicleSchema.safeParse({
+      ...VALID_VEHICLE_INPUT,
+      manufactureYear: 2024.5,
+    })
+    expect(result.success).toBe(false)
+  })
+})
+

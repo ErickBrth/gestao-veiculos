@@ -51,6 +51,20 @@ export interface VehicleResponse {
   dealer: DealerSummary | null
 }
 
+export interface DealerFormData {
+  corporateName: string
+  cnpj: string
+  address: {
+    zipCode: string
+    street: string
+    number: string
+    complement?: string | null
+    neighborhood: string
+    city: string
+    state: string
+  }
+}
+
 export interface VehicleRequest {
   brand: string
   model: string

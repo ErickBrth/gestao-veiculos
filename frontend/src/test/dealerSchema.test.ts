@@ -74,7 +74,7 @@ describe('addressSchema', () => {
     const result = addressSchema.safeParse({ ...VALID_ADDRESS_INPUT, state: 'SPO' })
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.errors[0].message).toBe('UF deve ter 2 letras')
+      expect(result.error.errors[0].message).toBe('UF inválida')
     }
   })
 
@@ -131,4 +131,23 @@ describe('dealerSchema', () => {
       expect(paths).toContain('address.zipCode')
     }
   })
+
+  describe('dealerSchema — state', () => {
+  it('accepts a valid two-letter state code', () => {
+    const result = dealerSchema.safeParse({
+      ...VALID_DEALER_INPUT,
+      address: { ...VALID_DEALER_INPUT.address, state: 'PB' },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a code that is not a real Brazilian state', () => {
+    const result = dealerSchema.safeParse({
+      ...VALID_DEALER_INPUT,
+      address: { ...VALID_DEALER_INPUT.address, state: 'XX' },
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
 })

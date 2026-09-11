@@ -195,8 +195,10 @@ export function VehicleFormModal({ isOpen, onClose, vehicleToEdit }: VehicleForm
           <Input
             label="Preço (R$)"
             type="number"
-            step="0.01"
-            placeholder="95000.00"
+            placeholder="149900.00"
+            min={0}
+            max={9999999999.99}
+            step={0.01}
             error={errors.price?.message}
             {...register('price')}
           />
