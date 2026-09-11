@@ -1,35 +1,50 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { addressApi } from '../api/addressApi'
+import { ApiError } from '../api/client'
 import type { AddressLookupResponse } from '../types'
-import { toast } from 'sonner'
+
+export type AddressLookupResult =
+  | { status: 'found'; address: AddressLookupResponse }
+  | { status: 'not-found' }
+  | { status: 'unavailable' }
+  | { status: 'incomplete' }
 
 export function useAddressLookup() {
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const lookup = async (zipCode: string): Promise<AddressLookupResponse | null> => {
-    const cleanZip = zipCode.replace(/\D/g, '')
-    if (cleanZip.length !== 8) {
-      return null
+  const verifiedZipCode = useRef<string | null>(null)
+  const lookup = useCallback(async (zipCode: string): Promise<AddressLookupResult> => {
+    const digits = zipCode.replace(/\D/g, '')
+
+    if (digits.length !== 8) {
+      return { status: 'incomplete' }
     }
 
     setIsLoading(true)
-    setError(null)
-
     try {
-      const data = await addressApi.lookup(cleanZip)
-      toast.success('Endereço localizado com sucesso!')
-      return data
+      const address = await addressApi.lookup(digits)
+      verifiedZipCode.current = digits
+      return { status: 'found', address }
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Não foi possível preencher o endereço automaticamente.'
-      setError(message)
-      toast.warning(message)
-      return null
+      verifiedZipCode.current = null
+
+      if (err instanceof ApiError && err.problemDetail.status === 404) {
+        return { status: 'not-found' }
+      }
+      return { status: 'unavailable' }
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  return { lookup, isLoading, error }
+  const isVerified = useCallback(
+    (zipCode: string) => verifiedZipCode.current === zipCode.replace(/\D/g, ''),
+    []
+  )
+
+  const trustZipCode = useCallback((zipCode: string) => {
+    verifiedZipCode.current = zipCode.replace(/\D/g, '')
+  }, [])
+
+  return { lookup, isLoading, isVerified, trustZipCode }
 }

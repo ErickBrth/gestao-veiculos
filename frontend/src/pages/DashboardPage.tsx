@@ -9,7 +9,7 @@ import { DealerFormModal } from '../components/dealer/DealerFormModal'
 import { VehicleFormModal } from '../components/vehicle/VehicleFormModal'
 import { KpiCard } from '../components/dashboard/KpiCard'
 import { PageHeader } from '../components/shared/PageHeader'
-import { formatCnpj, formatCurrency } from '../utils/format'
+import { maskCnpj, formatCurrency } from '../utils/format'
 import { Building2, Car, Plus, AlertCircle, DollarSign, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -200,7 +200,7 @@ export function DashboardPage() {
                     </p>
                     <div className="text-[11px] text-slate-500 mt-0.5">
                       {dealer.address.city}/{dealer.address.state} •{' '}
-                      <span className="font-mono">{formatCnpj(dealer.cnpj)}</span>
+                      <span className="font-mono">{maskCnpj(dealer.cnpj)}</span>
                     </div>
                   </div>
                   <Link

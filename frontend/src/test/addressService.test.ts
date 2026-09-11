@@ -4,14 +4,9 @@ import { useAddressLookup } from '../services/addressService'
 import { addressApi } from '../api/addressApi'
 import { ApiError } from '../api/client'
 import { addressLookupFactory, problemDetailFactory } from './factories'
-import { toast } from 'sonner'
 
 vi.mock('../api/addressApi', () => ({
   addressApi: { lookup: vi.fn() },
-}))
-
-vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
 }))
 
 async function callLookup(zipCode: string) {
@@ -31,10 +26,10 @@ describe('useAddressLookup — guard clauses', () => {
     ['3 digits', '123'],
     ['7 digits', '1234567'],
     ['only dashes and spaces', '----    '],
-  ])('returns null and skips the API call for %s', async (_, zipCode) => {
+  ])('returns incomplete and skips the API call for %s', async (_, zipCode) => {
     const { returnValue } = await callLookup(zipCode)
 
-    expect(returnValue).toBeNull()
+    expect(returnValue).toEqual({ status: 'incomplete' })
     expect(addressApi.lookup).not.toHaveBeenCalled()
   })
 })
@@ -42,24 +37,21 @@ describe('useAddressLookup — guard clauses', () => {
 describe('useAddressLookup — successful lookup', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('strips formatting from CEP before calling the API', async () => {
-    const mockAddress = addressLookupFactory.build()
-    vi.mocked(addressApi.lookup).mockResolvedValueOnce(mockAddress)
+  it('strips formatting from the CEP before calling the API', async () => {
+    vi.mocked(addressApi.lookup).mockResolvedValueOnce(addressLookupFactory.build())
 
     await callLookup('01001-000')
 
     expect(addressApi.lookup).toHaveBeenCalledWith('01001000')
   })
 
-  it('returns the address data and shows a success toast', async () => {
+  it('returns found with the address payload', async () => {
     const mockAddress = addressLookupFactory.build()
     vi.mocked(addressApi.lookup).mockResolvedValueOnce(mockAddress)
 
     const { returnValue, result } = await callLookup('01001000')
 
-    expect(returnValue).toEqual(mockAddress)
-    expect(toast.success).toHaveBeenCalledWith('Endereço localizado com sucesso!')
-    expect(result.current.error).toBeNull()
+    expect(returnValue).toEqual({ status: 'found', address: mockAddress })
     expect(result.current.isLoading).toBe(false)
   })
 
@@ -69,54 +61,55 @@ describe('useAddressLookup — successful lookup', () => {
 
     const { returnValue } = await callLookup('58400000')
 
-    expect(returnValue?.complement).toBeUndefined()
+    expect(returnValue).toEqual({ status: 'found', address: mockAddress })
   })
 })
 
 describe('useAddressLookup — error handling', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('handles a generic Error and shows the message as a warning toast', async () => {
-    vi.mocked(addressApi.lookup).mockRejectedValueOnce(new Error('CEP não encontrado'))
-
-    const { returnValue, result } = await callLookup('99999999')
-
-    expect(returnValue).toBeNull()
-    expect(result.current.error).toBe('CEP não encontrado')
-    expect(toast.warning).toHaveBeenCalledWith('CEP não encontrado')
-    expect(result.current.isLoading).toBe(false)
-  })
-
-  it('handles a 404 ApiError with a user-readable message', async () => {
+  it('maps a 404 to not-found, so the form can block the submit', async () => {
     const problem = problemDetailFactory.buildNotFound('CEP 99999999 não encontrado')
     vi.mocked(addressApi.lookup).mockRejectedValueOnce(new ApiError(problem))
 
-    const { returnValue, result } = await callLookup('99999999')
+    const { returnValue } = await callLookup('99999999')
 
-    expect(returnValue).toBeNull()
-    expect(result.current.error).toBe('CEP 99999999 não encontrado')
-    expect(toast.warning).toHaveBeenCalled()
+    expect(returnValue).toEqual({ status: 'not-found' })
   })
 
-  it('handles a 409 ApiError gracefully', async () => {
-    const problem = problemDetailFactory.buildConflict('Serviço de CEP indisponível no momento')
+  it('maps a 409 to unavailable, so a provider outage does not block the submit', async () => {
+    const problem = problemDetailFactory.buildConflict('Serviço de CEP indisponível')
     vi.mocked(addressApi.lookup).mockRejectedValueOnce(new ApiError(problem))
 
-    const { returnValue, result } = await callLookup('01001000')
+    const { returnValue } = await callLookup('01001000')
 
-    expect(returnValue).toBeNull()
-    expect(result.current.error).toBe('Serviço de CEP indisponível no momento')
+    expect(returnValue).toEqual({ status: 'unavailable' })
   })
 
-  it('falls back to a generic message for non-Error thrown values', async () => {
+  it('maps a 500 to unavailable', async () => {
+    vi.mocked(addressApi.lookup).mockRejectedValueOnce(
+      new ApiError(problemDetailFactory.buildServerError())
+    )
+
+    const { returnValue } = await callLookup('01001000')
+
+    expect(returnValue).toEqual({ status: 'unavailable' })
+  })
+
+  it('treats a network failure as unavailable', async () => {
+    vi.mocked(addressApi.lookup).mockRejectedValueOnce(new Error('Network Error'))
+
+    const { returnValue } = await callLookup('01001000')
+
+    expect(returnValue).toEqual({ status: 'unavailable' })
+  })
+
+  it('treats a non-Error thrown value as unavailable', async () => {
     vi.mocked(addressApi.lookup).mockRejectedValueOnce('unexpected string error')
 
-    const { returnValue, result } = await callLookup('01001000')
+    const { returnValue } = await callLookup('01001000')
 
-    expect(returnValue).toBeNull()
-    expect(result.current.error).toBe(
-      'Não foi possível preencher o endereço automaticamente.'
-    )
+    expect(returnValue).toEqual({ status: 'unavailable' })
   })
 
   it('always resets isLoading to false after an error', async () => {
@@ -125,5 +118,55 @@ describe('useAddressLookup — error handling', () => {
     const { result } = await callLookup('12345678')
 
     expect(result.current.isLoading).toBe(false)
+  })
+})
+
+describe('useAddressLookup — verification state', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('marks a CEP as verified after a successful lookup', async () => {
+    vi.mocked(addressApi.lookup).mockResolvedValueOnce(addressLookupFactory.build())
+
+    const { result } = await callLookup('01001-000')
+
+    expect(result.current.isVerified('01001000')).toBe(true)
+    expect(result.current.isVerified('01001-000')).toBe(true)
+  })
+
+  it('does not mark a different CEP as verified', async () => {
+    vi.mocked(addressApi.lookup).mockResolvedValueOnce(addressLookupFactory.build())
+
+    const { result } = await callLookup('01001000')
+
+    expect(result.current.isVerified('58400000')).toBe(false)
+  })
+
+  it('clears the verified CEP when a lookup fails', async () => {
+    vi.mocked(addressApi.lookup)
+      .mockResolvedValueOnce(addressLookupFactory.build())
+      .mockRejectedValueOnce(new ApiError(problemDetailFactory.buildNotFound()))
+
+    const { result } = renderHook(() => useAddressLookup())
+
+    await act(async () => {
+      await result.current.lookup('01001000')
+    })
+    expect(result.current.isVerified('01001000')).toBe(true)
+
+    await act(async () => {
+      await result.current.lookup('99999999')
+    })
+    expect(result.current.isVerified('01001000')).toBe(false)
+  })
+
+  it('trustZipCode marks a stored CEP as verified without calling the API', () => {
+    const { result } = renderHook(() => useAddressLookup())
+
+    act(() => {
+      result.current.trustZipCode('58400-000')
+    })
+
+    expect(result.current.isVerified('58400000')).toBe(true)
+    expect(addressApi.lookup).not.toHaveBeenCalled()
   })
 })

@@ -9,8 +9,11 @@ import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { ApiError } from '../../api/client'
 import { toast } from 'sonner'
-import type { DealerResponse, DealerRequest } from '../../types'
+import type { DealerResponse } from '../../types'
 import { Loader2 } from 'lucide-react'
+import { maskCnpj, maskZipCode } from '../../utils/format'
+import { Select } from '../ui/Select'
+import { BRAZILIAN_STATES } from '../../utils/brazilianStates'
 
 interface DealerFormModalProps {
   isOpen: boolean
@@ -18,43 +21,49 @@ interface DealerFormModalProps {
   dealerToEdit?: DealerResponse | null
 }
 
+const EMPTY_FORM: DealerFormData = {
+  corporateName: '',
+  cnpj: '',
+  address: {
+    zipCode: '',
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+  },
+}
+
 export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormModalProps) {
   const isEditing = !!dealerToEdit
   const createDealer = useCreateDealer()
   const updateDealer = useUpdateDealer()
-  const { lookup, isLoading: isLookingUpAddress } = useAddressLookup()
+  const { lookup, isLoading: isLookingUpAddress, isVerified, trustZipCode } = useAddressLookup()
 
   const {
     register,
     handleSubmit,
     setValue,
     setError,
+    clearErrors,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<DealerFormData>({
     resolver: zodResolver(dealerSchema),
-    defaultValues: {
-      corporateName: '',
-      cnpj: '',
-      address: {
-        zipCode: '',
-        street: '',
-        number: '',
-        complement: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-      },
-    },
+    defaultValues: EMPTY_FORM,
   })
+
+  const cnpjField = register('cnpj')
+  const zipField = register('address.zipCode')
 
   useEffect(() => {
     if (dealerToEdit) {
       reset({
         corporateName: dealerToEdit.corporateName,
-        cnpj: dealerToEdit.cnpj,
+        cnpj: maskCnpj(dealerToEdit.cnpj),
         address: {
-          zipCode: dealerToEdit.address.zipCode || '',
+          zipCode: maskZipCode(dealerToEdit.address.zipCode || ''),
           street: dealerToEdit.address.street || '',
           number: dealerToEdit.address.number || '',
           complement: dealerToEdit.address.complement || '',
@@ -63,6 +72,7 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
           state: dealerToEdit.address.state || '',
         },
       })
+      trustZipCode(dealerToEdit.address.zipCode || '')
     } else {
       reset({
         corporateName: '',
@@ -78,43 +88,61 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
         },
       })
     }
-  }, [dealerToEdit, reset])
+  }, [dealerToEdit, reset, trustZipCode])
 
   const handleZipBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
-    const rawZip = e.target.value
-    const data = await lookup(rawZip)
-    if (data) {
-      setValue('address.street', data.street || '', { shouldValidate: true })
-      setValue('address.neighborhood', data.neighborhood || '', { shouldValidate: true })
-      setValue('address.city', data.city || '', { shouldValidate: true })
-      setValue('address.state', data.state || '', { shouldValidate: true })
-      if (data.complement) {
-        setValue('address.complement', data.complement)
-      }
+    const result = await lookup(e.target.value)
+
+    switch (result.status) {
+      case 'found':
+        clearErrors('address.zipCode')
+        setValue('address.street', result.address.street || '', { shouldValidate: true })
+        setValue('address.neighborhood', result.address.neighborhood || '', { shouldValidate: true })
+        setValue('address.city', result.address.city || '', { shouldValidate: true })
+        setValue('address.state', result.address.state || '', { shouldValidate: true })
+        if (result.address.complement) {
+          setValue('address.complement', result.address.complement)
+        }
+        toast.success('Endereço localizado.')
+        break
+
+      case 'not-found':
+        setError('address.zipCode', { type: 'manual', message: 'CEP não encontrado' })
+        break
+
+      case 'unavailable':
+        toast.warning('Consulta de CEP indisponível. Preencha o endereço manualmente.')
+        break
+
+      case 'incomplete':
+        break
     }
   }
 
   const onSubmit = async (data: DealerFormData) => {
-    try {
-      const payload: DealerRequest = {
-        corporateName: data.corporateName,
-        cnpj: data.cnpj,
-        address: {
-          zipCode: data.address.zipCode,
-          street: data.address.street,
-          number: data.address.number,
-          complement: data.address.complement || null,
-          neighborhood: data.address.neighborhood,
-          city: data.address.city,
-          state: data.address.state,
-        },
+    if (!isVerified(data.address.zipCode)) {
+      const result = await lookup(data.address.zipCode)
+
+      if (result.status === 'not-found') {
+        setError(
+          'address.zipCode',
+          { type: 'manual', message: 'CEP não encontrado' },
+          { shouldFocus: true }
+        )
+        return
       }
 
+      if (result.status === 'unavailable') {
+        toast.warning('Não foi possível confirmar o CEP. Cadastro prosseguirá com o endereço informado.')
+      }
+    }
+
+    try {
       if (isEditing && dealerToEdit) {
-        await updateDealer.mutateAsync({ id: dealerToEdit.id, data: payload })
+        await updateDealer.mutateAsync({ id: dealerToEdit.id, data })
         toast.success('Concessionária atualizada com sucesso!')
       } else {
-        await createDealer.mutateAsync(payload)
+        await createDealer.mutateAsync(data)
         toast.success('Concessionária cadastrada com sucesso!')
       }
       onClose()
@@ -152,8 +180,15 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
           <Input
             label="CNPJ"
             placeholder="00.000.000/0000-00"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={18}
             error={errors.cnpj?.message}
-            {...register('cnpj')}
+            {...cnpjField}
+            onChange={(e) => {
+              e.target.value = maskCnpj(e.target.value)
+              cnpjField.onChange(e)
+            }}
           />
         </div>
 
@@ -173,10 +208,17 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
             <Input
               label="CEP"
               placeholder="00000-000"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={9}
               error={errors.address?.zipCode?.message}
-              {...register('address.zipCode')}
+              {...zipField}
+              onChange={(e) => {
+                e.target.value = maskZipCode(e.target.value)
+                zipField.onChange(e)
+              }}
               onBlur={(e) => {
-                register('address.zipCode').onBlur(e)
+                zipField.onBlur(e)
                 handleZipBlur(e)
               }}
             />
@@ -224,10 +266,10 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
               {...register('address.city')}
             />
 
-            <Input
+            <Select
               label="UF"
-              placeholder="SP"
-              maxLength={2}
+              placeholder="Selecione"
+              options={BRAZILIAN_STATES}
               error={errors.address?.state?.message}
               {...register('address.state')}
             />
@@ -238,7 +280,12 @@ export function DealerFormModal({ isOpen, onClose, dealerToEdit }: DealerFormMod
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" isLoading={isSubmitting}>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isSubmitting}
+            disabled={isLookingUpAddress}
+          >
             {isEditing ? 'Atualizar Concessionária' : 'Cadastrar Concessionária'}
           </Button>
         </div>

@@ -1,9 +1,9 @@
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
-import { formatCnpj, formatZipCode } from '../../utils/format'
 import type { DealerResponse } from '../../types'
 import { Edit2, Trash2, Car, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { maskCnpj, maskZipCode } from '../../utils/format'
 
 interface DealerCardProps {
   dealer: DealerResponse
@@ -21,7 +21,7 @@ export function DealerCard({ dealer, onEdit, onDelete }: DealerCardProps) {
               {dealer.corporateName}
             </h3>
             <span className="text-xs font-mono text-slate-500 mt-0.5 block">
-              CNPJ: {formatCnpj(dealer.cnpj)}
+              CNPJ: {maskCnpj(dealer.cnpj)}
             </span>
           </div>
           <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono border border-slate-200/60">
@@ -36,7 +36,7 @@ export function DealerCard({ dealer, onEdit, onDelete }: DealerCardProps) {
             {dealer.address.complement ? ` - ${dealer.address.complement}` : ''}
             <br />
             {dealer.address.neighborhood}, {dealer.address.city} - {dealer.address.state} • CEP:{' '}
-            <span className="font-mono">{formatZipCode(dealer.address.zipCode)}</span>
+            <span className="font-mono">{maskZipCode(dealer.address.zipCode)}</span>
           </span>
         </div>
       </div>

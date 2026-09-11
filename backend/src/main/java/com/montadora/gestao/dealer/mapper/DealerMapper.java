@@ -16,7 +16,7 @@ public final class DealerMapper {
         if (request == null) {
             return null;
         }
-        return new Address(request.zipCode(), request.street(), request.number(),
+        return new Address(digitsOnly(request.zipCode()), request.street(), request.number(),
                 request.complement(), request.neighborhood(), request.city(), request.state());
     }
 
@@ -31,5 +31,9 @@ public final class DealerMapper {
     public static DealerResponse toResponse(Dealer dealer) {
         return new DealerResponse(dealer.getId(), dealer.getCorporateName(), dealer.getCnpj(),
                 toAddressResponse(dealer.getAddress()));
+    }
+
+    private static String digitsOnly(String value) {
+        return value == null ? null : value.replaceAll("\\D", "");
     }
 }
